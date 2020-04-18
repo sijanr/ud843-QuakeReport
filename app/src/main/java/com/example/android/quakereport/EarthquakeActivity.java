@@ -15,18 +15,20 @@
  */
 package com.example.android.quakereport;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 public class EarthquakeActivity extends AppCompatActivity {
 
     public static final String LOG_TAG = EarthquakeActivity.class.getName();
-    private List<Earthquake> earthquakeList;
+    private final String urlString = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&eventtype=earthquake&orderby=time&minmag=6&limit=10";
     private RecyclerView mRecyclerView;
     private EarthquakeListAdapter mAdapter;
 
@@ -34,22 +36,34 @@ public class EarthquakeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.earthquake_activity);
+        new EarthquakeAsyncTask().execute(urlString);
 
-        // Create a fake list of earthquake locations.
-        earthquakeList = QueryUtils.extractEarthquakes();
-
-
-        // Find a reference to the {@link RecyclerView} in the layout
-        mRecyclerView = findViewById(R.id.recycler_view);
-
-        // Create a new adapter of earthquakes
-        mAdapter = new EarthquakeListAdapter(this, earthquakeList);
-
-        // Set the adapter on the RecyclerView
-        // so the list can be populated in the user interface
-        mRecyclerView.setAdapter(mAdapter);
-
-        //give the RecyclerView a default layout manager
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
     }
+
+    private class EarthquakeAsyncTask extends AsyncTask<String,Void,List<Earthquake>>{
+
+        @Override
+        protected List<Earthquake> doInBackground(String... strings) {
+            String url = strings[0];
+            return QueryUtils.fetchEarthquakeDate(url);
+        }
+
+        @Override
+        protected void onPostExecute(List<Earthquake> earthquakeList) {
+            // Find a reference to the {@link RecyclerView} in the layout
+            mRecyclerView = findViewById(R.id.recycler_view);
+
+            // Create a new adapter of earthquakes
+            mAdapter = new EarthquakeListAdapter(EarthquakeActivity.this, earthquakeList);
+
+            // Set the adapter on the RecyclerView
+            // so the list can be populated in the user interface
+            mRecyclerView.setAdapter(mAdapter);
+
+            //give the RecyclerView a default layout manager
+            mRecyclerView.setLayoutManager(new LinearLayoutManager(EarthquakeActivity.this));
+        }
+    }
+
+
 }
